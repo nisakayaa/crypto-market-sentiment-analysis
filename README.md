@@ -59,21 +59,7 @@ crypto-market-sentiment-analysis/
 | **Visualization** | Matplotlib, Seaborn, Plotly |
 | **Statistics** | SciPy, statsmodels (Granger causality) |
 
-## 🚀 Quick Start
 
-```bash
-git clone https://github.com/yourusername/crypto-market-sentiment-analysis.git
-cd crypto-market-sentiment-analysis
-pip install -r requirements.txt
-
-# Generate sample data
-python src/generate_data.py
-
-# Run analyses
-python src/price_analysis.py
-python src/sentiment.py
-python src/correlation_study.py
-```
 
 ## 📊 Key Insights
 
