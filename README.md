@@ -136,9 +136,8 @@ r = requests.get("https://api.alternative.me/fng/?limit=365")
 
 ## 👤 Author
 
-**Your Name**
-- GitHub: [@yourusername](https://github.com/yourusername)
-- LinkedIn: [Your Name](https://linkedin.com/in/yourname)
+**Nisa Kaya**
+- GitHub: nisakayaa
 
 ---
 
