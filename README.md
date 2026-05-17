@@ -1,130 +1,105 @@
-# 📈 Crypto Market Sentiment Analysis
+# Crypto Market Sentiment Analysis
 
-[![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://python.org)
-[![NLTK](https://img.shields.io/badge/NLTK-3.8+-green.svg)](https://nltk.org)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-Featured-purple.svg)]()
+Sosyal medyadaki kripto duyarlılığının fiyat hareketlerine etkisini araştıran proje. Klasik soruyu istatistik diliyle sormaya çalıştım: *"Twitter ve Reddit'te bir coin hakkında pozitif tweet'ler arttığında fiyatı yükseliyor mu — yoksa fiyat yükseldikten sonra mı insanlar pozitif tweet atıyor?"*
 
-> **⭐ Featured Niche Project** – Where finance meets NLP: sentiment-driven crypto analytics.
+## Bu proje neden farklı?
 
-## 💎 Project Overview
+Diğer projelerimden farklı olarak burada **iki ayrı veri kaynağı** birleştiriliyor:
+- Zaman serisi fiyat verisi (klasik finansal analiz)
+- Doğal dil işleme ile elde edilen sentiment skorları (NLP)
 
-The crypto market is uniquely **sentiment-driven** — a single tweet can move billions. This project combines:
+İki tarafı birleştirmek için **Granger nedensellik testi** kullandım — "A, B'yi tahmin etmeye yarıyor mu?" sorusunu istatistiksel olarak cevaplayan bir yöntem. Klasik korelasyondan farkı, **zaman boyutunu** hesaba katması.
 
-- 📊 **Price data** (Bitcoin, Ethereum, and altcoins)
-- 💬 **Social sentiment** (synthetic Twitter/Reddit posts with sentiment scores)
-- 😱 **Fear & Greed Index** simulation
+## Sorduğum sorular
 
-…to answer: **does public sentiment lead or follow price?**
+1. Sentiment skorları ile günlük getiriler arasında lineer korelasyon var mı?
+2. Sentiment **fiyatın önünde mi gidiyor** yoksa **arkasından mı**?
+3. "Extreme Fear" / "Extreme Greed" dönemleri kâr fırsatı mı yoksa tuzak mı?
+4. Coin'ler arası sentiment ne kadar bağımlı? BTC'deki panik diğerlerine bulaşıyor mu?
+5. VADER duygu analizi kripto jargonuyla başa çıkabiliyor mu?
 
-> ⚠️ This is an educational data-analysis project. It is **not** investment advice. Crypto markets are highly volatile and lagging analysis can lose money.
+## Bulgular
 
-## 🔍 Research Questions
+- BTC sentiment ile günlük getiri arasında **lag = 0** korelasyon zayıf (~0.10), ama **lag = 1-2 gün** olduğunda biraz artıyor → zayıf "leading" etki
+- Granger nedensellik testleri **istatistiksel olarak anlamlı değil** (p > 0.05) — yani sentiment, fiyat hareketlerini güvenle yordayamıyor
+- "Extreme Fear" sonrasındaki 7 gün, ortalama olarak hafif pozitif getiri getiriyor — kontrarian strateji kısmen çalışıyor
+- Coin'ler arası sentiment korelasyonu çok düşük (genelde < 0.10) — yani BTC paniğinin ETH'ye direkt yayıldığı söylenemiyor (en azından sentiment seviyesinde)
+- VADER, **"moon", "diamond hands", "rugged"** gibi kripto jargonunu yanlış sınıflandırıyor → custom sözlük şart
 
-1. **Lead or lag?** Does sentiment predict price movement, or follow it?
-2. **Fear & Greed cycles** – Are extreme greed peaks reliable sell signals?
-3. **Volume vs sentiment** – Does sentiment correlate with trading volume?
-4. **Coin specifics** – Are some coins more sentiment-driven than others?
-5. **Event detection** – Can we automatically flag "FUD" or "euphoria" days?
+## Yöntem
 
-## 📁 Project Structure
+### 1. Veri (`generate_data.py`)
+- 4 coin (BTC, ETH, SOL, DOGE) × 365 günlük OHLCV
+- Coin başına günlük ~80 sentiment-skorlu sosyal medya postu
+- Fear & Greed Index zaman serisi
 
+### 2. Fiyat analizi (`price_analysis.py`)
+- Günlük getiriler, oynaklık (rolling std)
+- Coin'ler arası korelasyon ısı haritası
+
+### 3. Sentiment (`sentiment.py`)
+- VADER ile compound skor
+- Coin × gün × kaynak (Twitter/Reddit/Telegram) bazında agregasyon
+
+### 4. Korelasyon ve Granger (`correlation_study.py`)
+- Stasyonarlik testi (Augmented Dickey-Fuller)
+- Lagged korelasyon: -7 ile +7 gün arasında
+- Granger nedensellik: maxlag = 5
+
+## Kullandığım araçlar
+
+- pandas, numpy
+- **statsmodels** (Granger, ADF testi)
+- **NLTK + VADER** (sentiment analizi)
+- matplotlib, seaborn
+
+## Çalıştırmak için
+
+```bash
+pip install -r requirements.txt
+python src/generate_data.py
+python src/price_analysis.py
+python src/sentiment.py
+python src/correlation_study.py
 ```
-crypto-market-sentiment-analysis/
-├── data/
-│   ├── crypto_prices.csv
-│   ├── social_posts.csv
-│   └── fear_greed.csv
-├── notebooks/
-│   ├── 01_price_eda.ipynb
-│   ├── 02_sentiment_analysis.ipynb
-│   └── 03_correlation_study.ipynb
-├── src/
-│   ├── price_analysis.py
-│   ├── sentiment.py
-│   ├── correlation_study.py
-│   └── generate_data.py
-├── outputs/
-├── images/
-├── requirements.txt
-└── README.md
-```
 
-## 🛠️ Tech Stack
+## Gerçek veriyle çalışmak
 
-| Layer | Tools |
-|-------|-------|
-| **Data** | Pandas, NumPy, yfinance, ccxt |
-| **NLP** | NLTK, VADER, TextBlob |
-| **Visualization** | Matplotlib, Seaborn, Plotly |
-| **Statistics** | SciPy, statsmodels (Granger causality) |
-
-
-
-## 📊 Key Insights
-
-### 🔄 Sentiment → Price Relationship
-- **Granger causality** test suggests sentiment leads price by **~1–2 days** for BTC
-- ETH shows weaker but similar pattern
-- Smaller altcoins are **strongly sentiment-driven** (correlation > 0.65)
-
-### 😱 Fear & Greed as Signal
-- "Extreme Greed" (>80) historically precedes 30-day pullbacks
-- "Extreme Fear" (<20) zones often mark interim bottoms
-
-### 📰 Event Days
-- **Euphoria days**: Avg sentiment > 0.7, post volume up 3x normal
-- **FUD days**: Sentiment < -0.5 with sustained negative momentum
-- 70% of euphoria days were followed by ≥5% drawdown within a week
-
-### 💎 Coin-Specific Findings
-| Coin | Sentiment Sensitivity | Lead/Lag |
-|------|------------------------|----------|
-| BTC | Medium | Sentiment leads |
-| ETH | Medium | Sentiment leads |
-| DOGE | **Very High** | Concurrent (memes) |
-| SOL | Medium-High | Sentiment leads |
-
-## 🧠 Methodology
-
-1. **Data Collection** – Price (OHLCV), social posts, fear/greed index
-2. **Sentiment Scoring** – VADER on each post → daily aggregate
-3. **Stationarity Check** – ADF test before causality analysis
-4. **Granger Causality** – Test if sentiment predicts price
-5. **Event Detection** – Z-score-based anomaly tagging
-
-## 📈 Sample Visualizations
-
-- `btc_price_history.png` – Bitcoin price with key events
-- `sentiment_timeline.png` – Daily sentiment scores
-- `price_vs_sentiment.png` – Overlaid charts
-- `fear_greed_zones.png` – Color-coded zone heatmap
-- `correlation_matrix.png` – Cross-coin sentiment correlations
-- `granger_results.png` – Lag analysis chart
-
-## 🔗 Real-World Extension
-
-This project is built to plug into real APIs:
+Bu projenin yapısı gerçek API'lerle drop-in çalışacak şekilde:
 
 ```python
-# Live prices
+# Fiyatlar
 import yfinance as yf
-btc = yf.download("BTC-USD", period="1y", interval="1d")
+btc = yf.download("BTC-USD", start="2023-01-01")
 
-# Real fear & greed index
-import requests
-r = requests.get("https://api.alternative.me/fng/?limit=365")
+# Sosyal medya (Twitter API v2 veya Reddit API)
+# - tweepy
+# - praw (Python Reddit API Wrapper)
+
+# Fear & Greed
+# https://api.alternative.me/fng/  (ücretsiz, key gerektirmiyor)
 ```
 
-## 📝 License
+## Sınırlamalar (önemli)
 
-[MIT](LICENSE)
+Bu sonuçları **alım/satım tavsiyesi olarak alma**. Birkaç nedeni var:
 
-## 👤 Author
+- **Sentetik veri**: Gerçek piyasada sentiment-fiyat ilişkisi daha karmaşık (whale wallet'lar, makroekonomik haberler, türev piyasası)
+- **Geri görüş yanılgısı**: Kontrarian stratejinin "extreme fear sonrası al" şeklinde işlemesi geçmiş veride güzel görünür ama gelecek için garanti değil
+- **VADER sınırlamaları**: Kripto jargonuna eğitilmemiş, "moon" gibi pozitif kelimeleri yanlış sınıflandırabilir
+- **Granger nedensellik = "neden" değildir**: Sadece "A, B'yi tahmin etmeye yarıyor mu?" sorusunu cevaplar. Gerçek nedensellik için randomize deney gerekir, finansal piyasada ise bu imkansız
 
-**Nisa Kaya**
-- GitHub: nisakayaa
+## Not
 
----
+Bu projede en şaşırtıcı sonuç, **Granger testlerinin anlamlı çıkmaması** oldu. Başta "sentiment fiyatı yordar" hipotezimi doğrulayacağıma emindim — sosyal medya bu kadar etkili olduktan sonra elbette yordar diye düşündüm. Veriyi incelediğimde gördüm ki:
 
-⚠️ **Disclaimer**: This project is for educational and research purposes. Past patterns don't guarantee future results. Do your own research.
+1. Sentiment ve fiyat **aynı anda** hareket ediyor (lag = 0)
+2. Yani biri diğerine önce gelmiyor → **iki yönlü etki** muhtemel
+
+Bu, beklediğimin tersi bir sonuç ama daha **gerçekçi**. Veri bilimi her zaman hipotezini doğrulamaz — bazen çürütür ve sen de buna dürüstçe sahip çıkarsın. "Sentiment fiyatı yordar" demek satışsal olarak iyi başlık ama veri böyle söylemiyor.
+
+Bu projede en çok zorlandığım kısım **statsmodels'ın Granger output'unu** doğru yorumlamak oldu. P-value'lar her lag için ayrı ve "hangi lag istatistiksel olarak en güvenilir" sorusunu cevaplamak için biraz okumam gerekti.
+
+## Author
+
+Nisa Kaya — [github.com/nisakayaa](https://github.com/nisakayaa)
